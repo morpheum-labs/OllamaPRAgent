@@ -1,7 +1,7 @@
 # Makefile for OllamaPRAgent (ollama-review-bot)
 
 GO := go
-BIN_NAME := ollama-review-bot
+BIN_NAME := review-bot
 BIN_DIR := bin
 
 COVERAGE_FILE := coverage.out
@@ -30,7 +30,7 @@ GO_LDFLAGS := -s -w \
 # Cross-compile targets for bin/ (GOOS/GOARCH)
 PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 
-.PHONY: build build-release run test test-harness coverage clean clean-bin deep-clean \
+.PHONY: build build-release build-telegram build-server run test test-harness coverage clean clean-bin deep-clean \
 	version print-version install dist tag push-tag publish release release-check lint
 
 # --- version ---
@@ -42,6 +42,15 @@ version print-version:
 
 build:
 	$(GO) build -trimpath -ldflags "$(GO_LDFLAGS)" -o $(BIN_NAME) .
+
+TELEGRAM_BIN := ollama-telegram-bot
+SERVER_BIN := ollama-github-server
+
+build-telegram:
+	$(GO) build -trimpath -ldflags "$(GO_LDFLAGS)" -o $(TELEGRAM_BIN) ./cmd/telegram
+
+build-server:
+	$(GO) build -trimpath -ldflags "$(GO_LDFLAGS)" -o $(SERVER_BIN) ./cmd/server
 
 # Release-style local binary (same as build; name makes CI/docs intent clear)
 build-release: build
@@ -124,7 +133,7 @@ release: release-check build dist
 # --- clean ---
 
 clean: clean-bin
-	rm -f $(BIN_NAME) $(COVERAGE_FILE) $(COVERAGE_HTML)
+	rm -f $(BIN_NAME) $(TELEGRAM_BIN) $(SERVER_BIN) $(COVERAGE_FILE) $(COVERAGE_HTML)
 
 deep-clean: clean
 	rm -rf $(TEST_REPO_DIR)

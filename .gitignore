@@ -6,3 +6,9 @@ bin/
 tests/repo/
 coverage.out
 coverage.html
+
+# Telegram bot local state
+.telegram-data/
+
+# GitHub server SQLite (local dev)
+data/

@@ -1,0 +1,24 @@
+services:
+  github-pr-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ollamapragent-server:latest
+    command: ["/usr/local/bin/ollama-github-server"]
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      SERVER_PUBLIC_URL: "http://localhost:8080"
+      DB_PATH: "/data/watchlist.db"
+      GITHUB_PAT: "${GITHUB_PAT}"
+      OLLAMA_URL: "${OLLAMA_URL:-http://host.docker.internal:11434}"
+      ORB_OLLAMA_MODEL: "${ORB_OLLAMA_MODEL:-qwen2.5-coder:7b}"
+      SERVER_ADMIN_TOKEN: "${SERVER_ADMIN_TOKEN:-}"
+    volumes:
+      - watchlist-data:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  watchlist-data:

@@ -1,6 +1,9 @@
 package gitprovider
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // ProviderType represents the type of Git provider
 type ProviderType string
@@ -12,6 +15,8 @@ const (
 	GitProviderType ProviderType = "git"
 	// GiteaProviderType represents a Gitea-based provider
 	GiteaProviderType ProviderType = "gitea"
+	// GitHubProviderType uses the GitHub REST API (github.com or GHES).
+	GitHubProviderType ProviderType = "github"
 	// AutoProviderType indicates that the provider should be auto-detected
 	AutoProviderType ProviderType = "auto"
 )
@@ -39,6 +44,10 @@ type Config struct {
 	// Gitea provider
 	GiteaURL   string
 	GiteaToken string
+
+	// GitHub provider (PAT with repo + pull_requests read/write for private repos)
+	GitHubToken   string
+	GitHubBaseURL string // empty = https://api.github.com; GHES: e.g. https://github.mycompany.com/api/v3
 }
 
 // CreateProvider creates the appropriate provider based on configuration
@@ -95,6 +104,19 @@ func CreateProvider(cfg Config) (GitProvider, error) {
 		}
 
 		return NewGiteaProvider(cfg.GiteaURL, cfg.GiteaToken, cfg.RepoName, cfg.PRNumber), nil
+
+	case GitHubProviderType:
+		if cfg.GitHubToken == "" {
+			return nil, fmt.Errorf("github provider requires a token (GitHub PAT)")
+		}
+		if cfg.RepoName == "" || !strings.Contains(cfg.RepoName, "/") {
+			return nil, fmt.Errorf("github provider requires repo-name as owner/repo")
+		}
+		if cfg.PRNumber == 0 {
+			return nil, fmt.Errorf("github provider requires a non-zero PR number")
+		}
+		return NewGitHubProvider(cfg.GitHubToken, cfg.GitHubBaseURL, cfg.RepoName, cfg.PRNumber)
+
 	case AutoProviderType:
 		return nil, fmt.Errorf("provider type is set to auto but no specific provider was detected")
 	default:
@@ -108,6 +130,11 @@ func detectProviderType(cfg Config) ProviderType {
 	if cfg.GiteaURL != "" && cfg.GiteaToken != "" && cfg.PRNumber != 0 {
 		fmt.Println("Detected Gitea provider")
 		return GiteaProviderType
+	}
+
+	if cfg.GitHubToken != "" && cfg.RepoName != "" && strings.Contains(cfg.RepoName, "/") && cfg.PRNumber != 0 {
+		fmt.Println("Detected GitHub provider")
+		return GitHubProviderType
 	}
 
 	// Check for file-specific options

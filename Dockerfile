@@ -6,7 +6,9 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o /ollama-review-bot .
+RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o /ollama-review-bot . \
+	&& CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o /ollama-telegram-bot ./cmd/telegram \
+	&& CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o /ollama-github-server ./cmd/server
 
 # Git provider shells out to git; HTTPS to Ollama/Gitea needs CA certs.
 FROM debian:bookworm-slim
@@ -16,5 +18,7 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /ollama-review-bot /usr/local/bin/ollama-review-bot
+COPY --from=builder /ollama-telegram-bot /usr/local/bin/ollama-telegram-bot
+COPY --from=builder /ollama-github-server /usr/local/bin/ollama-github-server
 
 ENTRYPOINT ["/usr/local/bin/ollama-review-bot"]
