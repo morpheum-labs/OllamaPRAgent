@@ -1,9 +1,8 @@
 # Makefile for OllamaPRAgent (ollama-review-bot)
 
 GO := go
-MODULE := github.com/morpheum-labs/OllamaPRAgent
 BIN_NAME := ollama-review-bot
-DIST_DIR := dist
+BIN_DIR := bin
 
 COVERAGE_FILE := coverage.out
 COVERAGE_HTML := coverage.html
@@ -28,10 +27,10 @@ GO_LDFLAGS := -s -w \
 	-X 'main.commit=$(GIT_COMMIT)' \
 	-X 'main.buildTime=$(BUILD_TIME)'
 
-# Cross-compile targets for dist (GOOS/GOARCH)
+# Cross-compile targets for bin/ (GOOS/GOARCH)
 PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 
-.PHONY: build build-release run test test-harness coverage clean clean-dist deep-clean \
+.PHONY: build build-release run test test-harness coverage clean clean-bin deep-clean \
 	version print-version install dist tag push-tag publish release release-check lint
 
 # --- version ---
@@ -82,22 +81,22 @@ lint:
 
 # --- artifacts ---
 
-clean-dist:
-	rm -rf $(DIST_DIR)
+clean-bin:
+	rm -rf $(BIN_DIR)
 
-dist: clean-dist
-	@mkdir -p $(DIST_DIR)
+dist: clean-bin
+	@mkdir -p $(BIN_DIR)
 	@set -e; for p in $(PLATFORMS); do \
 		goos=$${p%%/*}; \
 		goarch=$${p##*/}; \
 		ext=; \
 		[ "$$goos" = windows ] && ext=.exe || true; \
-		out="$(DIST_DIR)/$(BIN_NAME)-$$goos-$$goarch$$ext"; \
+		out="$(BIN_DIR)/$(BIN_NAME)-$$goos-$$goarch$$ext"; \
 		echo "build $$out"; \
 		GOOS=$$goos GOARCH=$$goarch $(GO) build -trimpath -ldflags "$(GO_LDFLAGS)" -o "$$out" .; \
 	done
-	@shasum -a 256 $(DIST_DIR)/* > $(DIST_DIR)/SHA256SUMS 2>/dev/null || sha256sum $(DIST_DIR)/* > $(DIST_DIR)/SHA256SUMS
-	@echo "Artifacts in $(DIST_DIR)/ (checksums: $(DIST_DIR)/SHA256SUMS)"
+	@cd $(BIN_DIR) && (shasum -a 256 $(BIN_NAME)-* > SHA256SUMS 2>/dev/null || sha256sum $(BIN_NAME)-* > SHA256SUMS)
+	@echo "Artifacts in $(BIN_DIR)/ (checksums: $(BIN_DIR)/SHA256SUMS)"
 
 # --- tag / publish ---
 
@@ -115,16 +114,16 @@ push-tag publish:
 release-check: test
 	@test -z "$$(git status --porcelain)" || (echo "Working tree is not clean; commit or stash before release." && exit 1)
 
-# Tests, checksumed multi-platform binaries, then remind next steps.
-# Typical: VERSION=v1.2.3 make dist && make release-check && make tag TAG=v1.2.3 && make publish TAG=v1.2.3
-release: release-check dist
+# Tests, local build, checksumed multi-platform binaries, then next-step hints.
+# Typical: VERSION=v1.2.3 make release && make tag TAG=v1.2.3 && make publish TAG=v1.2.3
+release: release-check build dist
 	@echo ""
 	@echo "Next: make tag TAG=vX.Y.Z && make publish TAG=vX.Y.Z"
-	@echo "Optional: gh release create \"\$$TAG\" dist/* --generate-notes"
+	@echo "Optional: gh release create \"\$$TAG\" bin/* --generate-notes"
 
 # --- clean ---
 
-clean: clean-dist
+clean: clean-bin
 	rm -f $(BIN_NAME) $(COVERAGE_FILE) $(COVERAGE_HTML)
 
 deep-clean: clean

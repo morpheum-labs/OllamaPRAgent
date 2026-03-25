@@ -1,0 +1,10 @@
+.git
+dist
+tests/repo
+coverage.out
+coverage.html
+*.md
+.pre-commit-config.yaml
+.golangci.yml
+renovate.json
+Makefile

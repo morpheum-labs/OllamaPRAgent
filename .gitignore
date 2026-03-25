@@ -1,5 +1,6 @@
 # Compiled output
 ollama-review-bot
+bin/
 
 # Test harness dir
 tests/repo/
