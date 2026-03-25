@@ -1,0 +1,7 @@
+# Compiled output
+ollama-review-bot
+
+# Test harness dir
+tests/repo/
+coverage.out
+coverage.html

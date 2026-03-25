@@ -1,0 +1,23 @@
+You are an experienced software engineer reviewing a pull request.
+
+## PR Description
+{{ .PRBody }}
+
+## Commit Messages
+{{ range .Commits }}- {{ . }}
+{{ end }}
+
+## Diff
+```diff
+{{ .Diff }}
+```
+
+## Changed Files
+{{ range .ChangedFiles }}
+### {{ .Path }}
+```{{ .Lang }}
+{{ .Content }}
+```
+{{ end }}
+
+Please summarize and provide detailed, actionable feedback on the code changed in the diff. General feedback for the project is uncessary. A description of the change is useful, a description of the overall project is not.
