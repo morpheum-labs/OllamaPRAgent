@@ -20,6 +20,13 @@ const (
 	defaultOllamaModel     = "qwen2.5-coder:7b"
 )
 
+// Set at link time via -ldflags (see Makefile).
+var (
+	version   = "dev"
+	commit    = "unknown"
+	buildTime = "unknown"
+)
+
 func EnvOrDefault[T float64 | int | bool | string](d T, envs ...string) T {
 	for _, env := range envs {
 		if envVal := os.Getenv(env); envVal != "" {
@@ -96,6 +103,8 @@ func defaultPRNumber() int {
 
 func main() {
 	var (
+		showVersion = flag.Bool("version", false, "Print version and exit")
+
 		// Common flags
 		postComment    = flag.Bool("post-comment", EnvOrDefault(false, "ORB_POST_COMMENT"), "Post the review as a comment")
 		prNumber       = flag.Int("pr-number", defaultPRNumber(), "PR number")
@@ -129,6 +138,13 @@ func main() {
 	)
 
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Printf("%s\n", version)
+		fmt.Printf("commit %s\n", commit)
+		fmt.Printf("built %s\n", buildTime)
+		return
+	}
 
 	// Create provider config
 	providerConfig := gitprovider.Config{
